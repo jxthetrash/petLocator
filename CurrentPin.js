@@ -1,32 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text, Button, ActivityIndicator, Pressable, TouchableHighlight, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-export default function CurrentPin() {
+export default function App() {
   const mapRef = useRef(null);
   const [marker, setMarker] = useState(null);
   const [region, setRegion] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState('');
+  const [isLoading, setIsLoading] = useState(false);  // State to track loading
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLastNonEmptyObject(); // Call your fetch function here
-    }, 10000); // Polling every 10 seconds
-    return () => clearInterval(interval); // Cleanup the interval on component unmount
+    fetchLastNonEmptyObject(); // Initial fetch
   }, []);
 
-  useEffect(() => {
-    // Ensure mapRef.current and marker are valid before attempting to animate to region
-    if (mapRef.current && marker) {
-      mapRef.current.animateToRegion({
-        latitude: marker.latitude,
-        longitude: marker.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421
-      }, 1500); // 1500 ms animation duration
-    }
-  }, [marker]); // Depend on marker
-
   const fetchLastNonEmptyObject = async () => {
+    setIsLoading(true); // Set loading to true when fetching starts
     try {
       const response = await fetch('https://xgq5-ytpx-3wjn.n7c.xano.io/api:7j4-r1kq/gpslocation');
       const data = await response.json();
@@ -34,31 +22,33 @@ export default function CurrentPin() {
       const lastNonEmpty = data.reverse().find(item => {
         if (item && typeof item.data === 'string') {
           const parsedData = JSON.parse(item.data);
-          return parsedData.lat && parsedData.lng; // Ensuring both latitude and longitude are present
+          return parsedData.lat && parsedData.lng;
         }
         return false;
       });
 
       if (lastNonEmpty) {
         const parsedData = JSON.parse(lastNonEmpty.data);
-        const newRegion = {
+        setRegion({
           latitude: Number(parsedData.lat),
           longitude: Number(parsedData.lng),
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421
-        };
-        setRegion(newRegion);
+          latitudeDelta: 0.008,
+          longitudeDelta: 0.004
+        });
         setMarker({
-          latitude: newRegion.latitude,
-          longitude: newRegion.longitude,
+          latitude: Number(parsedData.lat),
+          longitude: Number(parsedData.lng),
           title: `Location ID: ${lastNonEmpty.id}`,
           description: `Created on ${new Date(lastNonEmpty.created_at).toLocaleDateString()}`
         });
+        setLastUpdated(`Last Updated: ${new Date().toLocaleTimeString()}`);
       } else {
         console.error('No valid locations found.');
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
+    } finally {
+      setIsLoading(false); // Set loading to false once the fetch is complete
     }
   };
 
@@ -71,12 +61,25 @@ export default function CurrentPin() {
       >
         {marker && (
           <Marker
-            coordinate={region}
+            coordinate={marker}
             title={marker.title}
             description={marker.description}
           />
         )}
       </MapView>
+      <View style={styles.floatingBox}>
+        <Text style={styles.infoText}>🐱 {lastUpdated}</Text>
+        <TouchableOpacity
+          onPress={fetchLastNonEmptyObject}
+          style={{ backgroundColor: "#2e7bff", padding: "3%", borderRadius: 10, }}>
+          <Text style={{ fontSize: 18, color: "white" }}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2b1900" />
+        </View>
+      )}
     </View>
   );
 }
@@ -89,7 +92,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   map: {
+    flex: 1,
     width: '100%',
     height: '100%',
   },
+  floatingBox: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)'  // Optional: adds a semi-transparent overlay
+  },
+  infoText: {
+    fontSize: 16
+  }
 });
