@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Button, ActivityIndicator, Pressable, TouchableHighlight, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 export default function App() {
@@ -12,6 +12,12 @@ export default function App() {
   useEffect(() => {
     fetchLastNonEmptyObject(); // Initial fetch
   }, []);
+
+  useEffect(() => {
+    if (region && mapRef.current) {
+      mapRef.current.animateToRegion(region, 1000); // Animate to new region when it changes
+    }
+  }, [region]); // Add region to the dependency array to trigger effect when it changes
 
   const fetchLastNonEmptyObject = async () => {
     setIsLoading(true); // Set loading to true when fetching starts
@@ -29,12 +35,13 @@ export default function App() {
 
       if (lastNonEmpty) {
         const parsedData = JSON.parse(lastNonEmpty.data);
-        setRegion({
+        const newRegion = {
           latitude: Number(parsedData.lat),
           longitude: Number(parsedData.lng),
           latitudeDelta: 0.008,
           longitudeDelta: 0.004
-        });
+        };
+        setRegion(newRegion);
         setMarker({
           latitude: Number(parsedData.lat),
           longitude: Number(parsedData.lng),
@@ -71,13 +78,13 @@ export default function App() {
         <Text style={styles.infoText}>🐱 {lastUpdated}</Text>
         <TouchableOpacity
           onPress={fetchLastNonEmptyObject}
-          style={{ backgroundColor: "#2e7bff", padding: "3%", borderRadius: 10, }}>
+          style={{ backgroundColor: "#2e7bff", padding: 10, borderRadius: 10, }}>
           <Text style={{ fontSize: 18, color: "white" }}>Refresh</Text>
         </TouchableOpacity>
       </View>
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2b1900" />
+          <ActivityIndicator size="large" color="#0000ff" />
         </View>
       )}
     </View>
