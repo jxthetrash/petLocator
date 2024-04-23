@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import MapView, { Polyline } from 'react-native-maps';
+import MapView, { Polyline, Marker } from 'react-native-maps';
 import { Dropdown } from 'react-native-element-dropdown';
+import MapViewDirections from 'react-native-maps-directions';
 
 export default function History() {
   const [coordinates, setCoordinates] = useState([]);
@@ -13,6 +14,7 @@ export default function History() {
     longitudeDelta: 0.0421,
   });
   const [selectedHours, setSelectedHours] = useState(1);  // Default to 1 hour
+  const googleApikey = "AIzaSyABIeP1UAoPlbI51oOKSuRN-iiN8tcaAgE"
 
   const timeOptions = [
     { label: 'View Map of past 30 min', value: 0.5 },
@@ -84,16 +86,16 @@ export default function History() {
   return (
     <View style={styles.container}>
       <View style={styles.dropdownContainer}>
-      <Dropdown
-        style={styles.dropdown}
-        data={timeOptions}
-        labelField="label"
-        valueField="value"
-        value={selectedHours}
-        onChange={item => setSelectedHours(item.value)}
-      />
+        <Dropdown
+          style={styles.dropdown}
+          data={timeOptions}
+          labelField="label"
+          valueField="value"
+          value={selectedHours}
+          onChange={item => setSelectedHours(item.value)}
+        />
       </View>
-      <MapView
+      {/* <MapView
         initialRegion={region}
         style={styles.mapContainer}>
         {coordinates.map((coord, index) => (
@@ -108,6 +110,25 @@ export default function History() {
             geodesic={true}
           />
         ))}
+      </MapView> */}
+      <MapView
+        style={styles.mapContainer}
+        initialRegion={{
+          latitude: 42.291177,
+          longitude: -83.715784,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}>
+          {console.log(coordinates)}
+        <MapViewDirections
+          origin={coordinates[0]}
+          destination={coordinates[coordinates.length - 1]}
+          apikey={googleApikey} // insert your API Key here
+          strokeWidth={4}
+          strokeColor="#111111"
+        />
+        <Marker coordinate={coordinates[0]} />
+        <Marker coordinate={coordinates[coordinates.length - 1]} />
       </MapView>
     </View>
   );
@@ -121,13 +142,17 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     paddingTop: 10, // Adjust this to avoid overlap with status bar on Android
   },
+  maps:{
+    height: '80%',  // or a specific dp value
+    width: '100%',
+  },
   mapContainer: {
     flex: 1,
     width: '100%'
   },
   dropdownContainer: {
     flex: 0.1,
-    width: "90%",  
+    width: "90%",
     // backgroundColor: "white",
   },
   dropdown: {
