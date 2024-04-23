@@ -14,7 +14,7 @@ export default function History() {
     longitudeDelta: 0.0421,
   });
   const [selectedHours, setSelectedHours] = useState(1);  // Default to 1 hour
-  const googleApikey = "AIzaSyABIeP1UAoPlbI51oOKSuRN-iiN8tcaAgE"
+  const googleApikey = "YOUR-GOOGLE-API-KEY"
 
   const timeOptions = [
     { label: 'View Map of past 30 min', value: 0.5 },
